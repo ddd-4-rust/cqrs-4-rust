@@ -1,11 +1,11 @@
 [package]
-name = "cqrs-4-rust-springboot"
+name = "cqrs-4-rust-actix"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "actix-web integration for CQRS views (equivalent to Spring Boot SpringJpaViewManager)"
+description = "actix-web integration for CQRS views"
 
 [dependencies]
 ddd-4-rust-core = { path = "../../ddd-4-rust/core" }

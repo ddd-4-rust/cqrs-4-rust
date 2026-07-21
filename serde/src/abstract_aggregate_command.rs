@@ -8,7 +8,7 @@ use ddd_4_rust_core::{
     AggregateRootId, AggregateVersion, DomainEvent, EntityId, EntityIdPath,
     Event, EventId, EventType,
 };
-use ddd_4_rust_jackson::AbstractDomainEvent;
+use ddd_4_rust_serde::AbstractDomainEvent;
 use serde::{Deserialize, Serialize};
 
 /// Base struct for aggregate commands with serde serialization.

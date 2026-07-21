@@ -2,10 +2,9 @@
 resolver = "2"
 members = [
     "core",
-    "jackson",
-    "jsonb",
+    "serde",
     "esc",
-    "springboot",
+    "actix",
     "test",
 ]
 
@@ -14,10 +13,9 @@ version = "0.6.0"
 edition = "2021"
 license = "LGPL-3.0-or-later"
 authors = ["Michael Schnell"]
-repository = "https://github.com/fuinorg/cqrs-4-rust"
+repository = "https://github.com/ddd-4-rust/cqrs-4-rust"
 
 [patch.crates-io]
 ddd-4-rust-core = { path = "../ddd-4-rust/core" }
-ddd-4-rust-jackson = { path = "../ddd-4-rust/jackson" }
-ddd-4-rust-jsonb = { path = "../ddd-4-rust/jsonb" }
+ddd-4-rust-serde = { path = "../ddd-4-rust/serde" }
 ddd-4-rust-esc = { path = "../ddd-4-rust/esc" }

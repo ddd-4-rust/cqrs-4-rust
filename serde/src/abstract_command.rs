@@ -5,7 +5,7 @@
 use chrono::{DateTime, Utc};
 use cqrs_4_rust_core::Command;
 use ddd_4_rust_core::{Event, EventId, EventType};
-use ddd_4_rust_jackson::AbstractEvent;
+use ddd_4_rust_serde::AbstractEvent;
 use serde::{Deserialize, Serialize};
 
 /// Base struct for commands with serde serialization.
