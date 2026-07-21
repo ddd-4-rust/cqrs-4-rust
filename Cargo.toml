@@ -5,6 +5,7 @@ members = [
     "serde",
     "esc",
     "actix",
+    "axum",
     "test",
 ]
 
