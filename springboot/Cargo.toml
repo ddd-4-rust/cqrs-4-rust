@@ -1,0 +1,22 @@
+[package]
+name = "cqrs-4-rust-springboot"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "actix-web integration for CQRS views (equivalent to Spring Boot SpringJpaViewManager)"
+
+[dependencies]
+ddd-4-rust-core = { path = "../../ddd-4-rust/core" }
+cqrs-4-rust-core = { path = "../core" }
+cqrs-4-rust-esc = { path = "../esc" }
+async-trait = "0.1"
+actix-web = "4"
+actix-rt = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-cron-scheduler = "0.13"
+chrono = "0.4"
+serde = { version = "1", features = ["derive"] }
+log = "0.4"
+thiserror = "2"

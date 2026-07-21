@@ -1,0 +1,18 @@
+[package]
+name = "cqrs-4-rust-jsonb"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "JSON-B-equivalent serde for CQRS: AbstractCommand, AbstractAggregateCommand, SimpleResult, DataResult"
+
+[dependencies]
+ddd-4-rust-core = { path = "../../ddd-4-rust/core" }
+ddd-4-rust-jsonb = { path = "../../ddd-4-rust/jsonb" }
+cqrs-4-rust-core = { path = "../core" }
+cqrs-4-rust-jackson = { path = "../jackson" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = "0.4"
+uuid = { version = "1", features = ["v4", "serde"] }

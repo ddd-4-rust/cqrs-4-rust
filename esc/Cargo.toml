@@ -1,0 +1,17 @@
+[package]
+name = "cqrs-4-rust-esc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "CQRS Event Store Commons: SimpleJpaEventDispatcher, ProjectionService"
+
+[dependencies]
+ddd-4-rust-core = { path = "../../ddd-4-rust/core" }
+ddd-4-rust-esc = { path = "../../ddd-4-rust/esc" }
+cqrs-4-rust-core = { path = "../core" }
+async-trait = "0.1"
+chrono = "0.4"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"

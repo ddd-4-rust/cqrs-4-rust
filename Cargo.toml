@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "core",
+    "jackson",
+    "jsonb",
+    "esc",
+    "springboot",
+    "test",
+]
+
+[workspace.package]
+version = "0.6.0"
+edition = "2021"
+license = "LGPL-3.0-or-later"
+authors = ["Michael Schnell"]
+repository = "https://github.com/fuinorg/cqrs-4-rust"
+
+[patch.crates-io]
+ddd-4-rust-core = { path = "../ddd-4-rust/core" }
+ddd-4-rust-jackson = { path = "../ddd-4-rust/jackson" }
+ddd-4-rust-jsonb = { path = "../ddd-4-rust/jsonb" }
+ddd-4-rust-esc = { path = "../ddd-4-rust/esc" }

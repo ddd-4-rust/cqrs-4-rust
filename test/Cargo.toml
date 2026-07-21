@@ -1,0 +1,12 @@
+[package]
+name = "cqrs-4-rust-test"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Test utilities for cqrs-4-rust"
+
+[dependencies]
+ddd-4-rust-core = { path = "../../ddd-4-rust/core" }
+cqrs-4-rust-core = { path = "../core" }
