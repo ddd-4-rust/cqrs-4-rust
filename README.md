@@ -5,14 +5,14 @@
 >
 > [English](README.md) | [简体中文](README.zh-CN.md)
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Rust](https://img.shields.io/badge/rust-2021-orange?logo=rust)](https://www.rust-lang.org)
-[![Edition](https://img.shields.io/badge/Edition-2021-orange)](https://doc.rust-lang.org/edition-guide/)
-[![Workspace Resolver](https://img.shields.io/badge/Resolver-v2-blueviolet)](https://doc.rust-lang.org/cargo/reference/resolver.html)
+[![License](https://img.shields.io/badge/License-LGPL--3.0--or--later-blue.svg)](https://spdx.org/licenses/LGPL-3.0-or-later.html)
+[![Rust](https://img.shields.io/badge/rust-1.88-orange?logo=rust)](https://www.rust-lang.org)
+[![Edition](https://img.shields.io/badge/Edition-2024-orange)](https://doc.rust-lang.org/edition-guide/rust-2024/)
+[![Workspace Resolver](https://img.shields.io/badge/Resolver-v3-blueviolet)](https://doc.rust-lang.org/cargo/reference/resolver.html)
 [![Workspace Version](https://img.shields.io/badge/version-0.6.0-blue)](https://github.com/ddd-4-rust/cqrs-4-rust)
 [![Org](https://img.shields.io/badge/Org-ddd--4--rust-6366f1)](https://github.com/ddd-4-rust)
 [![Java Source](https://img.shields.io/badge/Port%20of-fuinorg/cqrs--4--java-green?logo=github)](https://github.com/fuinorg/cqrs-4-java)
-[![Progress](https://img.shields.io/badge/Migration-88%25-brightgreen)](docs/MIGRATION_STATUS.md)
+[![Progress](https://img.shields.io/badge/Mapped%20responsibilities-140%2F140-brightgreen)](docs/MIGRATION_STATUS.md)
 
 ---
 
@@ -34,8 +34,8 @@ All architectural credit, API patterns, and CQRS insights come from the **`fuino
 | **Repository** | [fuinorg/cqrs-4-java](https://github.com/fuinorg/cqrs-4-java) | [ddd-4-rust/cqrs-4-rust](https://github.com/ddd-4-rust/cqrs-4-rust) |
 | **Owner** | [fuinorg](https://github.com/fuinorg) | [ddd-4-rust org](https://github.com/ddd-4-rust) |
 | **Maintainer** | Michael Schnell | hiwepy |
-| **Language** | Java 17 | Rust 2021 |
-| **License** | LGPLv3 | Apache 2.0 |
+| **Language** | Java 17 | Rust 2024 Edition |
+| **License** | LGPLv3 | LGPL-3.0-or-later |
 | **Version base** | 0.6.0 | 0.6.0 |
 | **API compatibility** | — | 1:1 functional (idiomatic where required) |
 
@@ -60,19 +60,22 @@ Built around `async-trait` so the same traits work for any async runtime (tokio,
 ## 🧱 Workspace Architecture / Workspace 结构
 
 ```text
-cqrs-4-rust/                    ← Cargo Workspace (resolver = 2)
-├── core/                       ← Command / CommandHandler / Query / View / EventHandler
-│   └── cqrs-4-rust-core
-├── serde/                      ← Serde adapters for cross-handler message serialization
-│   └── cqrs-4-rust-serde
-├── esc/                        ← Event Sourcing Context — projection rebuilding helpers
-│   └── cqrs-4-rust-esc
-├── actix/                      ← actix-web integration: HttpCommand/HttpQuery extractors
-│   └── cqrs-4-rust-actix
-├── axum/                       ← axum integration: JSON command/query dispatch
-│   └── cqrs-4-rust-axum
-├── test/                       ← 共享测试工具
-│   └── cqrs-4-rust-test
+cqrs-4-rust/                    ← Virtual Cargo workspace (resolver = 3)
+├── crates/
+│   ├── cqrs/                   ← Feature-gated public facade
+│   ├── core/                   ← Runtime-independent CQRS contracts
+│   ├── esc/                    ← Event-store commons
+│   ├── serialization/
+│   │   ├── serde/              ← Serde implementation of the Java JSON wire format
+│   │   ├── jaxb/               ← JAXB-compatible XML wire format
+│   │   └── jsonb/              ← JSON-B wire format and inventory registry
+│   ├── adapter/
+│   │   ├── actix/              ← Actix Web adapter
+│   │   └── axum/               ← Axum adapter
+│   └── test/
+│       ├── support/            ← Shared integration-test support
+│       ├── actix/              ← Quarkus-source Actix integration model
+│       └── axum/               ← Spring-source Axum integration model
 └── docs/
     ├── ARCHITECTURE.md
     ├── IMPLEMENTATION_PLAN.md
@@ -83,12 +86,17 @@ cqrs-4-rust/                    ← Cargo Workspace (resolver = 2)
 
 | Crate | Version | Responsibility | Key Dependencies |
 |---|---|---|---|
+| `cqrs-4-rust` | 0.6.0 | Feature-gated public facade | core; optional adapters |
 | `cqrs-4-rust-core` | 0.6.0 | Command / Query / View / EventHandler traits | ddd-4-rust-core |
-| `cqrs-4-rust-serde` | 0.6.0 | Serde adapters for cross-handler messages | core, ddd-4-rust |
+| `cqrs-4-rust-serde` | 0.6.0 | Serde implementation of the Java JSON wire format | core, ddd-4-rust-serde |
+| `cqrs-4-rust-jaxb` | 0.6.0 | JAXB-compatible XML serialization | core, ddd-4-rust-serde, quick-xml |
+| `cqrs-4-rust-jsonb` | 0.6.0 | JSON-B-compatible Serde adapter and compile-time registry | core, serde_json, inventory |
 | `cqrs-4-rust-esc` | 0.6.0 | Event Sourcing Context — projection rebuilding | core, ddd-4-rust-esc |
 | `cqrs-4-rust-actix` | 0.6.0 | actix-web integration | core, esc |
 | `cqrs-4-rust-axum` | 0.6.0 | axum integration | core, esc |
-| `cqrs-4-rust-test` | 0.6.0 | Test utilities | core |
+| `cqrs-4-rust-test-support` | 0.6.0 | Shared integration-test support | core |
+| `cqrs-4-rust-test-actix` | 0.6.0 | Quarkus-source Actix integration model | actix-web, actix adapter |
+| `cqrs-4-rust-test-axum` | 0.6.0 | Spring-source Axum integration model | axum, axum adapter |
 
 ---
 
@@ -98,10 +106,7 @@ cqrs-4-rust/                    ← Cargo Workspace (resolver = 2)
 
 ```toml
 [dependencies]
-cqrs-4-rust-core = "0.6"
-ddd-4-rust-core = "0.7"
-async-trait = "0.1"
-tokio = { version = "1", features = ["full"] }
+cqrs-4-rust = { version = "0.6", features = ["serde", "axum"] }
 ```
 
 > ⚠️ **Not yet published to crates.io.** Use git/path dependency until then:
@@ -176,8 +181,10 @@ cargo doc   --workspace --no-deps --open
 | Aspect | Java (fuinorg/cqrs-4-java) | Rust (this port) |
 |---|---|---|
 | Handler signature | `void / T` | `async fn` returning `Result<Vec<Event>, E>` |
-| Serialization | Jackson modules | Serde with feature flags |
-| Transport | HTTP / JMS agnostic | `actix` / `axum` adapter crates |
+| Serialization | Jackson and JSON-B modules | Serde wire adapters with feature flags |
+| Spring Boot integration | Spring scheduler and application lifecycle | `axum` adapter crate |
+| Quarkus integration | Quarkus scheduler and startup/shutdown lifecycle | `actix` adapter crate |
+| Transport | HTTP / JMS agnostic | `axum` / `actix` adapter crates |
 | Dispatch | Spring `@Component` | Manual `CommandExecutor` wiring or DI container |
 | Async | `CompletableFuture` | `async-trait` + tokio |
 
@@ -185,17 +192,18 @@ cargo doc   --workspace --no-deps --open
 
 ## 📊 Migration Status / 迁移进度
 
-> Last updated: 2026-07-21
+> Audited against `cqrs-4-java` 0.6.0 on 2026-07-23. “Present” only means the
+> Rust file exists; semantic acceptance still requires its parity tests to pass.
 
-| crate | Target .rs files | Completed | Completion |
-|---|---|---|---|
-| `cqrs-4-rust-core` | 13 | 12 | 92% |
-| `cqrs-4-rust-serde` | 7 | 6 | 86% |
-| `cqrs-4-rust-esc` | 3 | 3 | 100% |
-| `cqrs-4-rust-actix` | 4 | 3 | 75% |
-| `cqrs-4-rust-axum` | 4 | 3 | 75% |
-| `cqrs-4-rust-test` | 1 | 1 | 100% |
-| **Overall** | **~35** | **28** | **~88%** |
+| Scope | Java target | Rust present | Accepted |
+|---|---:|---:|---:|
+| Migrated production, generated, test, and coverage responsibilities | 140 | 140 | 0 |
+
+File-count parity is complete. Semantic acceptance remains open for the real
+database-backed projection scheduler and Docker/KurrentDB/MariaDB end-to-end
+path. The Maven Wrapper bootstrap class is tooling and is the only Java file excluded
+from the 140-file migration ledger. The target Rust workspace and per-module
+mapping are defined in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md).
 
 Full status: see [`docs/MIGRATION_STATUS.md`](docs/MIGRATION_STATUS.md).
 
@@ -214,9 +222,12 @@ Full status: see [`docs/MIGRATION_STATUS.md`](docs/MIGRATION_STATUS.md).
 
 ## 📄 License
 
-This Rust port is licensed under **Apache 2.0** — see [LICENSE](LICENSE).
+This Rust port retains the source project's **LGPL-3.0-or-later** license, as
+declared in the workspace Cargo manifest.
 
-The original Java source from [`fuinorg/cqrs-4-java`](https://github.com/fuinorg/cqrs-4-java) is licensed under **LGPLv3**. By the terms of LGPLv3, derivative works may use a different license, but the original must be credited. We do so prominently in the Acknowledgement section above.
+The original Java source from
+[`fuinorg/cqrs-4-java`](https://github.com/fuinorg/cqrs-4-java) is licensed
+under LGPLv3 and is credited in the Acknowledgement section above.
 
 ---
 

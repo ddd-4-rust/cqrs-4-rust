@@ -1,22 +1,70 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
-    "core",
-    "serde",
-    "esc",
-    "actix",
-    "axum",
-    "test",
+    "crates/cqrs",
+    "crates/core",
+    "crates/esc",
+    "crates/serialization/serde",
+    "crates/serialization/jaxb",
+    "crates/serialization/jsonb",
+    "crates/adapter/actix",
+    "crates/adapter/axum",
+    "crates/test/support",
+    "crates/test/actix",
+    "crates/test/axum",
+    "xtask",
 ]
 
 [workspace.package]
 version = "0.6.0"
-edition = "2021"
+edition = "2024"
+rust-version = "1.88"
 license = "LGPL-3.0-or-later"
 authors = ["Michael Schnell"]
 repository = "https://github.com/ddd-4-rust/cqrs-4-rust"
 
+[workspace.dependencies]
+ddd-4-rust-core = { version = "0.7.0", path = "../ddd-4-rust/crates/core" }
+ddd-4-rust-esc = { version = "0.7.0", path = "../ddd-4-rust/crates/esc" }
+ddd-4-rust-serde = { version = "0.7.0", path = "../ddd-4-rust/crates/serde" }
+ddd-4-rust-test = { version = "0.7.0", path = "../ddd-4-rust/crates/test/support" }
+cqrs-4-rust-core = { version = "0.6.0", path = "crates/core" }
+cqrs-4-rust-esc = { version = "0.6.0", path = "crates/esc" }
+cqrs-4-rust-serde = { version = "0.6.0", path = "crates/serialization/serde" }
+cqrs-4-rust-jaxb = { version = "0.6.0", path = "crates/serialization/jaxb" }
+cqrs-4-rust-jsonb = { version = "0.6.0", path = "crates/serialization/jsonb" }
+cqrs-4-rust-actix = { version = "0.6.0", path = "crates/adapter/actix" }
+cqrs-4-rust-axum = { version = "0.6.0", path = "crates/adapter/axum" }
+cqrs-4-rust-test-support = { version = "0.6.0", path = "crates/test/support" }
+cqrs-4-rust-test-actix = { version = "0.6.0", path = "crates/test/actix" }
+cqrs-4-rust-test-axum = { version = "0.6.0", path = "crates/test/axum" }
+adler2 = "2.0.1"
+actix-web = "4.14.0"
+async-trait = "0.1.91"
+axum = "0.8.9"
+chrono = { version = "0.4.45", features = ["serde"] }
+inventory = "0.3.24"
+log = "0.4.33"
+quick-xml = { version = "0.41.0", features = ["serialize"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.19"
+tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+tokio-cron-scheduler = "0.15.1"
+tower = { version = "0.5.3", features = ["util"] }
+uuid = { version = "1.24.0", features = ["serde", "v4"] }
+
+[workspace.lints.rust]
+missing_docs = "warn"
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+
 [patch.crates-io]
-ddd-4-rust-core = { path = "../ddd-4-rust/core" }
-ddd-4-rust-serde = { path = "../ddd-4-rust/serde" }
-ddd-4-rust-esc = { path = "../ddd-4-rust/esc" }
+ddd-4-rust-core = { path = "../ddd-4-rust/crates/core" }
+ddd-4-rust-serde = { path = "../ddd-4-rust/crates/serde" }
+ddd-4-rust-esc = { path = "../ddd-4-rust/crates/esc" }

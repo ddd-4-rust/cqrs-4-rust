@@ -1,0 +1,31 @@
+[package]
+name = "cqrs-4-rust"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "CQRS facade with optional serialization and web-framework adapters"
+
+[features]
+default = []
+esc = ["dep:cqrs-4-rust-esc"]
+serde = ["dep:cqrs-4-rust-serde"]
+jaxb = ["dep:cqrs-4-rust-jaxb"]
+jsonb = ["dep:cqrs-4-rust-jsonb"]
+actix = ["esc", "dep:cqrs-4-rust-actix"]
+axum = ["esc", "dep:cqrs-4-rust-axum"]
+full = ["serde", "jaxb", "jsonb", "actix", "axum"]
+
+[dependencies]
+cqrs-4-rust-core.workspace = true
+cqrs-4-rust-esc = { workspace = true, optional = true }
+cqrs-4-rust-serde = { workspace = true, optional = true }
+cqrs-4-rust-jaxb = { workspace = true, optional = true }
+cqrs-4-rust-jsonb = { workspace = true, optional = true }
+cqrs-4-rust-actix = { workspace = true, optional = true }
+cqrs-4-rust-axum = { workspace = true, optional = true }
+
+[lints]
+workspace = true

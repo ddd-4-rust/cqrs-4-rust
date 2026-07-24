@@ -1,0 +1,24 @@
+[package]
+name = "cqrs-4-rust-jsonb"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "JSON-B wire compatibility implemented with Serde and inventory"
+
+[dependencies]
+chrono.workspace = true
+cqrs-4-rust-core.workspace = true
+ddd-4-rust-core.workspace = true
+inventory.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+uuid.workspace = true
+
+[lints]
+workspace = true

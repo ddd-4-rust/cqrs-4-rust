@@ -1,0 +1,19 @@
+[package]
+name = "cqrs-4-rust-serde"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Serde serialization with cqrs-4-java wire compatibility"
+
+[dependencies]
+ddd-4-rust-core.workspace = true
+cqrs-4-rust-core.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,20 @@
+[package]
+name = "cqrs-4-rust-jaxb"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "JAXB-compatible XML serialization for cqrs-4-rust"
+
+[dependencies]
+chrono.workspace = true
+cqrs-4-rust-core.workspace = true
+ddd-4-rust-core.workspace = true
+ddd-4-rust-serde = { workspace = true, features = ["xml"] }
+quick-xml.workspace = true
+serde.workspace = true
+
+[lints]
+workspace = true
