@@ -1,10 +1,14 @@
-# Stub config — local-only registry and aliases live in config.toml.example.
-# Copy it to a private location (e.g. .cargo/config.toml.local) and `include`
-# it from here if you want the local registry alias.
+# Stub config. CI-safe in the sense that no registry is actively
+# resolved against the network. The `ddd4rust-local` registry is
+# declared (so cargo's metadata can parse ddd-4-rust's Cargo.toml
+# references) but pointed at a non-existent path so cargo will fail
+# loudly if any crate actually tries to use it (rather than silently
+# hitting the network and waiting for a timeout).
 #
-# CI runners should keep this file empty so Cargo never tries to reach
-# the loopback mirror declared in config.toml.example.
+# Local developers with a Ktra-based mirror running on 127.0.0.1:18000
+# should `cp .cargo/config.toml.example .cargo/config.toml` to enable
+# the mirror.
 
-[alias]
-# xtask alias intentionally absent here — uncomment in config.toml.example
-# once you've copied it locally.
+[registries.ddd4rust-local]
+index = "sparse+http://127.0.0.1:18000/index/"
+credential-provider = "cargo:token"
