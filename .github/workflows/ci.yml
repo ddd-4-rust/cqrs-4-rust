@@ -10,12 +10,14 @@
 #   6. tools/check_migration_parity.sh (140-file migration baseline)
 #
 # Notes:
+# - GitHub Actions does NOT accept flow-style lists ([a, b]) inside the
+#   `with:` block of an action step. We use block style (- a / - b) for
+#   every action input. (See: https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions)
 # - The local registry declared in `.cargo/config.toml`
 #   (`[registries.ddd4rust-local] index = "sparse+http://127.0.0.1:18000/index/"`)
 #   is a developer-only local mirror. We neutralise it in CI by exporting
-#   `CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse` and an empty override index so
-#   Cargo never tries to talk to the loopback. All real deps are fetched from
-#   crates.io.
+#   `CARGO_REGISTRIES_DDD4RUST_LOCAL_INDEX=""` so Cargo never tries to
+#   talk to the loopback. All real deps are fetched from crates.io.
 # - rust-toolchain.toml pins `channel = "1.88.0"`; we use that exact version
 #   (not `stable`) to keep behaviour deterministic.
 
@@ -23,9 +25,13 @@ name: ci
 
 on:
   push:
-    branches: [main, dev]
+    branches:
+      - main
+      - dev
   pull_request:
-    branches: [main, dev]
+    branches:
+      - main
+      - dev
   workflow_dispatch:
 
 # Cancel in-progress runs of the same workflow when a new commit lands.
@@ -53,7 +59,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
-          components: [rustfmt]
+          components: rustfmt
       - run: cargo fmt --all -- --check
 
   check:
@@ -63,10 +69,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
-          components: [clippy]
+          components: clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: cqrs-4-rust-core cqrs-4-rust-esc cqrs-4-rust-serde cqrs-4-rust-jaxb cqrs-4-rust-jsonb cqrs-4-rust-axum cqrs-4-rust-actix cqrs-4-rust-test-support cqrs-4-rust-test-actix cqrs-4-rust-test-axum cqrs-4-rust xtask
+          workspaces: >-
+            cqrs-4-rust-core
+            cqrs-4-rust-esc
+            cqrs-4-rust-serde
+            cqrs-4-rust-jaxb
+            cqrs-4-rust-jsonb
+            cqrs-4-rust-axum
+            cqrs-4-rust-actix
+            cqrs-4-rust-test-support
+            cqrs-4-rust-test-actix
+            cqrs-4-rust-test-axum
+            cqrs-4-rust
+            xtask
       - run: cargo check --workspace --all-targets --all-features
 
   test:
@@ -76,12 +94,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
-          components: [clippy]
+          components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test --workspace --all-targets --all-features
+      - name: cargo test (e2e skipped by default)
+        run: cargo test --workspace --all-targets --all-features
         env:
-          # Set RUN_E2E=0 by default so #[ignore = "needs container"] tests
-          # are skipped. The e2e.yml workflow overrides this to RUN_E2E=1
+          # RUN_E2E=0 by default keeps #[ignore = "needs container"] tests
+          # skipped. The e2e.yml workflow overrides this to RUN_E2E=1
           # with real KurrentDB/MariaDB services.
           RUN_E2E: "0"
 
@@ -92,7 +111,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
-          components: [clippy, rustfmt]
+          components: clippy,rustfmt
       - uses: Swatinem/rust-cache@v2
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
@@ -119,12 +138,13 @@ jobs:
         # 140/140 Java<->Rust bijection end-to-end.
         run: SKIP_JAVA=1 ./tools/check_migration_parity.sh
 
-  matrix:
+  toolchain-smoke:
     name: toolchain smoke (${{ matrix.channel }})
     strategy:
       fail-fast: false
       matrix:
-        channel: ["1.88.0"]
+        channel:
+          - "1.88.0"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
