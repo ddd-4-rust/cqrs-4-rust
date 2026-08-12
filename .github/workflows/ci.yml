@@ -1,25 +1,38 @@
 # GitHub Actions: core CI for cqrs-4-rust
 #
 # Runs on every push to main / dev and every pull_request.
-# 6 gates must pass:
-#   1. cargo fmt --all -- --check
-#   2. cargo check --workspace --all-targets --all-features
-#   3. cargo test --workspace --all-targets --all-features
-#   4. cargo clippy --workspace --all-targets --all-features -- -D warnings
-#   5. cargo doc --workspace --all-features --no-deps
-#   6. tools/check_migration_parity.sh (140-file migration baseline)
+# Gates (each is its own job so a single failure doesn't block others):
+#   1. fmt (rustfmt)
+#   2. check (workspace)
+#   3. test (workspace, e2e-skipped via RUN_E2E=0)
+#   4. clippy (-D warnings)
+#   5. doc (workspace, no-deps)
+#   6. parity (140-file migration baseline)
 #
-# Notes:
-# - GitHub Actions does NOT accept flow-style lists ([a, b]) inside the
-#   `with:` block of an action step. We use block style (- a / - b) for
-#   every action input. (See: https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions)
+# Design notes:
+# - All `with:` blocks use scalar / comma-string form. GitHub Actions'
+#   workflow parser rejects flow-style YAML sequences ([a, b]) inside
+#   `with:` — error "A sequence was not expected".
+# - rust-toolchain.toml pins `channel = "1.88.0"`; we use the
+#   `@1.88.0` action tag (no explicit `toolchain:` input needed).
+#   In previous revisions we added a `toolchain-smoke` matrix job
+#   that passed `toolchain:` alongside the `@1.88.0` tag, which
+#   dtolnay/rust-toolchain rejects as an invalid input combination
+#   ("Unexpected input(s) 'toolchain', valid inputs are ['targets',
+#   'target', 'components']"). The job was removed.
+# - Swatinem/rust-cache@v2 was previously included for cargo build
+#   caching; it has been removed because the `workspaces:` input
+#   semantics differ from the workspace *root* name we pass and
+#   the additional setup step occasionally cancelled the cached
+#   step on first-run runners. Re-add later as a perf optimisation
+#   once the baseline CI is green.
 # - The local registry declared in `.cargo/config.toml`
 #   (`[registries.ddd4rust-local] index = "sparse+http://127.0.0.1:18000/index/"`)
-#   is a developer-only local mirror. We neutralise it in CI by exporting
-#   `CARGO_REGISTRIES_DDD4RUST_LOCAL_INDEX=""` so Cargo never tries to
-#   talk to the loopback. All real deps are fetched from crates.io.
-# - rust-toolchain.toml pins `channel = "1.88.0"`; we use that exact version
-#   (not `stable`) to keep behaviour deterministic.
+#   is a developer-only mirror. CI neutralises it via
+#   `CARGO_REGISTRIES_DDD4RUST_LOCAL_INDEX=""`.
+# - RUN_E2E=0 keeps `#[ignore = "needs container"]` integration
+#   tests skipped. The e2e.yml workflow overrides this to RUN_E2E=1
+#   with real KurrentDB/MariaDB services.
 
 name: ci
 
@@ -45,11 +58,13 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
-  # Neutralise the developer-only local registry so Cargo doesn't try to
-  # reach 127.0.0.1:18000 from CI runners.
+  # Neutralise the developer-only local registry so Cargo doesn't try
+  # to reach 127.0.0.1:18000 from CI runners.
   CARGO_REGISTRIES_DDD4RUST_LOCAL_INDEX: ""
   CARGO_NET_OFFLINE: "false"
   RUST_BACKTRACE: "1"
+  # Skip `#[ignore = "needs container"]` integration tests by default.
+  RUN_E2E: "0"
 
 jobs:
   fmt:
@@ -70,39 +85,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
           components: clippy
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: >-
-            cqrs-4-rust-core
-            cqrs-4-rust-esc
-            cqrs-4-rust-serde
-            cqrs-4-rust-jaxb
-            cqrs-4-rust-jsonb
-            cqrs-4-rust-axum
-            cqrs-4-rust-actix
-            cqrs-4-rust-test-support
-            cqrs-4-rust-test-actix
-            cqrs-4-rust-test-axum
-            cqrs-4-rust
-            xtask
       - run: cargo check --workspace --all-targets --all-features
 
   test:
-    name: test (workspace)
+    name: test (workspace, e2e skipped)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
           components: clippy
-      - uses: Swatinem/rust-cache@v2
-      - name: cargo test (e2e skipped by default)
-        run: cargo test --workspace --all-targets --all-features
-        env:
-          # RUN_E2E=0 by default keeps #[ignore = "needs container"] tests
-          # skipped. The e2e.yml workflow overrides this to RUN_E2E=1
-          # with real KurrentDB/MariaDB services.
-          RUN_E2E: "0"
+      - run: cargo test --workspace --all-targets --all-features
 
   clippy:
     name: clippy (-D warnings)
@@ -112,7 +105,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
           components: clippy,rustfmt
-      - uses: Swatinem/rust-cache@v2
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   doc:
@@ -121,7 +113,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.88.0
-      - uses: Swatinem/rust-cache@v2
       - run: cargo doc --workspace --all-features --no-deps
 
   parity:
@@ -130,26 +121,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: check 140-file migration baseline
-        # CI runs in a Rust-only checkout; the Java baseline lives in the
-        # sibling `cqrs-4-java` repo. The parity script is bi-modal:
+        # CI runs in a Rust-only checkout; the Java baseline lives in
+        # the sibling `cqrs-4-java` repo. The parity script is bi-modal:
         #   - default: full bidirectional check (requires JAVA_BASELINE)
         #   - SKIP_JAVA=1: Rust side only (used here)
         # Local developers should run without SKIP_JAVA to enforce the
         # 140/140 Java<->Rust bijection end-to-end.
         run: SKIP_JAVA=1 ./tools/check_migration_parity.sh
-
-  toolchain-smoke:
-    name: toolchain smoke (${{ matrix.channel }})
-    strategy:
-      fail-fast: false
-      matrix:
-        channel:
-          - "1.88.0"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.88.0
-        with:
-          toolchain: ${{ matrix.channel }}
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo --version && rustc --version
