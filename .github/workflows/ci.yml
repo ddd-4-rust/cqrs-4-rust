@@ -1,0 +1,135 @@
+# GitHub Actions: core CI for cqrs-4-rust
+#
+# Runs on every push to main / dev and every pull_request.
+# 6 gates must pass:
+#   1. cargo fmt --all -- --check
+#   2. cargo check --workspace --all-targets --all-features
+#   3. cargo test --workspace --all-targets --all-features
+#   4. cargo clippy --workspace --all-targets --all-features -- -D warnings
+#   5. cargo doc --workspace --all-features --no-deps
+#   6. tools/check_migration_parity.sh (140-file migration baseline)
+#
+# Notes:
+# - The local registry declared in `.cargo/config.toml`
+#   (`[registries.ddd4rust-local] index = "sparse+http://127.0.0.1:18000/index/"`)
+#   is a developer-only local mirror. We neutralise it in CI by exporting
+#   `CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse` and an empty override index so
+#   Cargo never tries to talk to the loopback. All real deps are fetched from
+#   crates.io.
+# - rust-toolchain.toml pins `channel = "1.88.0"`; we use that exact version
+#   (not `stable`) to keep behaviour deterministic.
+
+name: ci
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+# Cancel in-progress runs of the same workflow when a new commit lands.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+  # Neutralise the developer-only local registry so Cargo doesn't try to
+  # reach 127.0.0.1:18000 from CI runners.
+  CARGO_REGISTRIES_DDD4RUST_LOCAL_INDEX: ""
+  CARGO_NET_OFFLINE: "false"
+  RUST_BACKTRACE: "1"
+
+jobs:
+  fmt:
+    name: fmt (rustfmt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: [rustfmt]
+      - run: cargo fmt --all -- --check
+
+  check:
+    name: check (workspace)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: [clippy]
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: cqrs-4-rust-core cqrs-4-rust-esc cqrs-4-rust-serde cqrs-4-rust-jaxb cqrs-4-rust-jsonb cqrs-4-rust-axum cqrs-4-rust-actix cqrs-4-rust-test-support cqrs-4-rust-test-actix cqrs-4-rust-test-axum cqrs-4-rust xtask
+      - run: cargo check --workspace --all-targets --all-features
+
+  test:
+    name: test (workspace)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: [clippy]
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --all-targets --all-features
+        env:
+          # Set RUN_E2E=0 by default so #[ignore = "needs container"] tests
+          # are skipped. The e2e.yml workflow overrides this to RUN_E2E=1
+          # with real KurrentDB/MariaDB services.
+          RUN_E2E: "0"
+
+  clippy:
+    name: clippy (-D warnings)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: [clippy, rustfmt]
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  doc:
+    name: doc (workspace, no-deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo doc --workspace --all-features --no-deps
+
+  parity:
+    name: migration parity (140/140)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: check 140-file migration baseline
+        # CI runs in a Rust-only checkout; the Java baseline lives in the
+        # sibling `cqrs-4-java` repo. The parity script is bi-modal:
+        #   - default: full bidirectional check (requires JAVA_BASELINE)
+        #   - SKIP_JAVA=1: Rust side only (used here)
+        # Local developers should run without SKIP_JAVA to enforce the
+        # 140/140 Java<->Rust bijection end-to-end.
+        run: SKIP_JAVA=1 ./tools/check_migration_parity.sh
+
+  matrix:
+    name: toolchain smoke (${{ matrix.channel }})
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: ["1.88.0"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          toolchain: ${{ matrix.channel }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo --version && rustc --version

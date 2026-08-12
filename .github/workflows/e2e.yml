@@ -1,0 +1,94 @@
+# GitHub Actions: end-to-end CI with real KurrentDB + MariaDB services
+#
+# Triggered:
+# - manually via workflow_dispatch
+# - nightly at 02:00 UTC (so we catch environment drift without manual work)
+#
+# This workflow is the eventual home for the deferred work tracked by
+# https://github.com/ddd-4-rust/cqrs-4-rust/issues/9 ("[plan] Task 6 — 真实
+# KurrentDB / MariaDB 端到端链路"). When integration tests' `#[ignore]`
+# guards are flipped from "needs container" to "set RUN_E2E=1", this workflow
+# becomes the canonical gate.
+
+name: e2e
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * *"
+  # Also run when the parity gate changes the parity script — the only
+  # signal currently visible in CI without explicit opt-in.
+  push:
+    paths:
+      - "tools/check_migration_parity.sh"
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+  CARGO_REGISTRIES_DDD4RUST_LOCAL_INDEX: ""
+  RUST_BACKTRACE: "1"
+  # Enable #[ignore = "set RUN_E2E=1"] tests.
+  RUN_E2E: "1"
+
+jobs:
+  e2e-kurrent-mariadb:
+    name: e2e (KurrentDB + MariaDB)
+    runs-on: ubuntu-latest
+    services:
+      kurrentdb:
+        image: docker.io/kurrent/kurrentdb:24.10
+        ports:
+          - 2113:2113
+        env:
+          KURRENTDB_CLUSTER_SIZE: 1
+          KURRENTDB_INSECURE: "true"
+      mariadb:
+        image: docker.io/mariadb:11
+        ports:
+          - 3306:3306
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: cqrs4rust
+        # Force MariaDB to listen on TCP for the test driver.
+        options: >-
+          --health-cmd "mariadb-admin ping --password=root"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: [clippy]
+      - uses: Swatinem/rust-cache@v2
+
+      - name: wait for KurrentDB
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:2113/stats >/dev/null 2>&1; then
+              echo "kurrentdb ready in ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "kurrentdb did not become ready in 60s"
+          exit 1
+
+      - name: wait for MariaDB
+        run: |
+          for i in $(seq 1 60); do
+            if (echo > /dev/tcp/127.0.0.1/3306) >/dev/null 2>&1; then
+              echo "mariadb ready in ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "mariadb did not become ready in 60s"
+          exit 1
+
+      - name: cargo test (e2e)
+        run: cargo test --workspace --all-targets --all-features -- --include-ignored
