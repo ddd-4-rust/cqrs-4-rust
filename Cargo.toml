@@ -24,6 +24,14 @@ authors = ["Michael Schnell"]
 repository = "https://github.com/ddd-4-rust/cqrs-4-rust"
 
 [workspace.dependencies]
+# `ddd-4-rust-*` (the upstream CQRS framework this crate extends) is
+# NOT published to crates.io. The migration is in-flight and these
+# crates are only available as sibling-workspace path deps. Both
+# local development and CI require the `ddd-4-rust` repository to
+# exist at `../ddd-4-rust/` (one directory up). The CI workflow
+# bootstraps this by cloning ddd-4-rust as a sibling before any
+# cargo command runs; local developers should `git clone` it the
+# same way.
 ddd-4-rust-core = { version = "0.7.0", path = "../ddd-4-rust/crates/core" }
 ddd-4-rust-esc = { version = "0.7.0", path = "../ddd-4-rust/crates/esc" }
 ddd-4-rust-serde = { version = "0.7.0", path = "../ddd-4-rust/crates/serde" }
@@ -64,7 +72,12 @@ pedantic = { level = "warn", priority = -1 }
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
 
-[patch.crates-io]
-ddd-4-rust-core = { path = "../ddd-4-rust/crates/core" }
-ddd-4-rust-serde = { path = "../ddd-4-rust/crates/serde" }
-ddd-4-rust-esc = { path = "../ddd-4-rust/crates/esc" }
+# Note: previously this file carried a `[patch.crates-io]` block pointing
+# at `../ddd-4-rust/crates/...` so that local sibling-workspace
+# iteration on the upstream ddd-4-rust framework would propagate without
+# a crates.io publish. That patch was removed because it broke CI in
+# environments where the sibling checkout is absent (e.g. GitHub
+# Actions runners). Local developers iterating on ddd-4-rust in
+# parallel should re-add the patch in a local-only override (e.g.
+# `.cargo/config.toml` `[patch]` section or a user-level cargo
+# override).

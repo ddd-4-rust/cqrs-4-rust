@@ -1,6 +1,10 @@
-[registries.ddd4rust-local]
-index = "sparse+http://127.0.0.1:18000/index/"
-credential-provider = "cargo:token"
+# Stub config — local-only registry and aliases live in config.toml.example.
+# Copy it to a private location (e.g. .cargo/config.toml.local) and `include`
+# it from here if you want the local registry alias.
+#
+# CI runners should keep this file empty so Cargo never tries to reach
+# the loopback mirror declared in config.toml.example.
 
 [alias]
-xtask = "run --package xtask --"
+# xtask alias intentionally absent here — uncomment in config.toml.example
+# once you've copied it locally.

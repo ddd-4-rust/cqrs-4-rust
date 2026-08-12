@@ -1,0 +1,6 @@
+[registries.ddd4rust-local]
+index = "sparse+http://127.0.0.1:18000/index/"
+credential-provider = "cargo:token"
+
+[alias]
+xtask = "run --package xtask --"

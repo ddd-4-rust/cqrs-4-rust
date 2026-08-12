@@ -72,6 +72,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: clone sibling workspace (ddd-4-rust)
+        # cqrs-4-rust depends on ddd-4-rust-* via path deps pointing at
+        # ../ddd-4-rust. CI clones the sibling into $GITHUB_WORKSPACE/../ so
+        # the path resolves. If you fork cqrs-4-rust without ddd-4-rust,
+        # set DDD_4_RUST_REPO to a reachable Git URL.
+        env:
+          DDD_4_RUST_REPO: ${{ vars.DDD_4_RUST_REPO || 'https://github.com/ddd-4-rust/ddd-4-rust.git' }}
+        run: |
+          if [[ ! -d "$GITHUB_WORKSPACE/../ddd-4-rust" ]]; then
+            git clone --depth 1 "$DDD_4_RUST_REPO" "$GITHUB_WORKSPACE/../ddd-4-rust"
+          fi
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
           components: rustfmt
@@ -82,6 +93,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: clone sibling workspace (ddd-4-rust)
+        env:
+          DDD_4_RUST_REPO: ${{ vars.DDD_4_RUST_REPO || 'https://github.com/ddd-4-rust/ddd-4-rust.git' }}
+        run: |
+          if [[ ! -d "$GITHUB_WORKSPACE/../ddd-4-rust" ]]; then
+            git clone --depth 1 "$DDD_4_RUST_REPO" "$GITHUB_WORKSPACE/../ddd-4-rust"
+          fi
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
           components: clippy
@@ -92,6 +110,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: clone sibling workspace (ddd-4-rust)
+        env:
+          DDD_4_RUST_REPO: ${{ vars.DDD_4_RUST_REPO || 'https://github.com/ddd-4-rust/ddd-4-rust.git' }}
+        run: |
+          if [[ ! -d "$GITHUB_WORKSPACE/../ddd-4-rust" ]]; then
+            git clone --depth 1 "$DDD_4_RUST_REPO" "$GITHUB_WORKSPACE/../ddd-4-rust"
+          fi
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
           components: clippy
@@ -102,6 +127,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: clone sibling workspace (ddd-4-rust)
+        env:
+          DDD_4_RUST_REPO: ${{ vars.DDD_4_RUST_REPO || 'https://github.com/ddd-4-rust/ddd-4-rust.git' }}
+        run: |
+          if [[ ! -d "$GITHUB_WORKSPACE/../ddd-4-rust" ]]; then
+            git clone --depth 1 "$DDD_4_RUST_REPO" "$GITHUB_WORKSPACE/../ddd-4-rust"
+          fi
       - uses: dtolnay/rust-toolchain@1.88.0
         with:
           components: clippy,rustfmt
@@ -112,6 +144,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: clone sibling workspace (ddd-4-rust)
+        env:
+          DDD_4_RUST_REPO: ${{ vars.DDD_4_RUST_REPO || 'https://github.com/ddd-4-rust/ddd-4-rust.git' }}
+        run: |
+          if [[ ! -d "$GITHUB_WORKSPACE/../ddd-4-rust" ]]; then
+            git clone --depth 1 "$DDD_4_RUST_REPO" "$GITHUB_WORKSPACE/../ddd-4-rust"
+          fi
       - uses: dtolnay/rust-toolchain@1.88.0
       - run: cargo doc --workspace --all-features --no-deps
 
@@ -127,4 +166,7 @@ jobs:
         #   - SKIP_JAVA=1: Rust side only (used here)
         # Local developers should run without SKIP_JAVA to enforce the
         # 140/140 Java<->Rust bijection end-to-end.
+        # This job does NOT need the ddd-4-rust sibling because
+        # tools/check_migration_parity.sh only walks the Rust files in
+        # this repo (and, if JAVA_BASELINE is set, the Java repo too).
         run: SKIP_JAVA=1 ./tools/check_migration_parity.sh
